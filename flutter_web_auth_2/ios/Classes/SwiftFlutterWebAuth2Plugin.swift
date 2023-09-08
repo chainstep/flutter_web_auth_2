@@ -19,16 +19,18 @@ public class SwiftFlutterWebAuth2Plugin: NSObject, FlutterPlugin {
            let urlString = arguments["url"] as? String,
            let url = URL(string: urlString),
            let callbackURLScheme = arguments["callbackUrlScheme"] as? String,
-           let options = arguments["options"] as? Dictionary<String, AnyObject>
+           let preferEphemeral = arguments["preferEphemeral"] as? Bool
         {
             var sessionToKeepAlive: Any? // if we do not keep the session alive, it will get closed immediately while showing the dialog
             completionHandler = { (url: URL?, err: Error?) in
                 self.completionHandler = nil
                 
-                if #available(iOS 12, *) {
-                    (sessionToKeepAlive as! ASWebAuthenticationSession).cancel()
-                } else if #available(iOS 11, *) {
-                    (sessionToKeepAlive as! SFAuthenticationSession).cancel()
+                if sessionToKeepAlive != nil {
+                    if #available(iOS 12, *) {
+                        (sessionToKeepAlive as! ASWebAuthenticationSession).cancel()
+                    } else if #available(iOS 11, *) {
+                        (sessionToKeepAlive as! SFAuthenticationSession).cancel()
+                    }
                 }
                 
                 sessionToKeepAlive = nil
@@ -62,7 +64,6 @@ public class SwiftFlutterWebAuth2Plugin: NSObject, FlutterPlugin {
 
             if #available(iOS 12, *) {
                 let session = ASWebAuthenticationSession(url: url, callbackURLScheme: callbackURLScheme, completionHandler: completionHandler!)
-
                 if #available(iOS 13, *) {
                     var rootViewController: UIViewController? = nil
 
@@ -94,15 +95,14 @@ public class SwiftFlutterWebAuth2Plugin: NSObject, FlutterPlugin {
                         return
                     }
                     session.presentationContextProvider = contextProvider
-                    session.prefersEphemeralWebBrowserSession = options["preferEphemeral"]
+                    session.prefersEphemeralWebBrowserSession = preferEphemeral
                 }
-
-                session.start()
                 sessionToKeepAlive = session
+                session.start()
             } else if #available(iOS 11, *) {
                 let session = SFAuthenticationSession(url: url, callbackURLScheme: callbackURLScheme, completionHandler: completionHandler!)
-                session.start()
                 sessionToKeepAlive = session
+                session.start()
             } else {
                 result(FlutterError(code: "FAILED", message: "This plugin does currently not support iOS lower than iOS 11", details: nil))
             }
