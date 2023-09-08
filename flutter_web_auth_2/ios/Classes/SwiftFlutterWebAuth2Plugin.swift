@@ -25,10 +25,12 @@ public class SwiftFlutterWebAuth2Plugin: NSObject, FlutterPlugin {
             completionHandler = { (url: URL?, err: Error?) in
                 self.completionHandler = nil
                 
-                if #available(iOS 12, *) {
-                    (sessionToKeepAlive as! ASWebAuthenticationSession).cancel()
-                } else if #available(iOS 11, *) {
-                    (sessionToKeepAlive as! SFAuthenticationSession).cancel()
+                if sessionToKeepAlive != nil {
+                    if #available(iOS 12, *) {
+                        (sessionToKeepAlive as! ASWebAuthenticationSession).cancel()
+                    } else if #available(iOS 11, *) {
+                        (sessionToKeepAlive as! SFAuthenticationSession).cancel()
+                    }
                 }
                 
                 sessionToKeepAlive = nil
@@ -62,7 +64,6 @@ public class SwiftFlutterWebAuth2Plugin: NSObject, FlutterPlugin {
 
             if #available(iOS 12, *) {
                 let session = ASWebAuthenticationSession(url: url, callbackURLScheme: callbackURLScheme, completionHandler: completionHandler!)
-
                 if #available(iOS 13, *) {
                     var rootViewController: UIViewController? = nil
 
@@ -96,13 +97,12 @@ public class SwiftFlutterWebAuth2Plugin: NSObject, FlutterPlugin {
                     session.presentationContextProvider = contextProvider
                     session.prefersEphemeralWebBrowserSession = preferEphemeral
                 }
-
-                session.start()
                 sessionToKeepAlive = session
+                session.start()
             } else if #available(iOS 11, *) {
                 let session = SFAuthenticationSession(url: url, callbackURLScheme: callbackURLScheme, completionHandler: completionHandler!)
-                session.start()
                 sessionToKeepAlive = session
+                session.start()
             } else {
                 result(FlutterError(code: "FAILED", message: "This plugin does currently not support iOS lower than iOS 11", details: nil))
             }
